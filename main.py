@@ -23,11 +23,11 @@ class App(ttk.Frame):
         menubar.add_cascade(label="Help", menu=help_menu)
 
     def init_login(self):
-        Label(self, text="Email:").grid(row=3, column=10, padx=10, pady=10)
-        Label(self, text="Password:").grid(row=4, column=10, padx=10, pady=10)
+        ttk.Label(self, text="Email:").grid(row=3, column=10, padx=10, pady=10)
+        ttk.Label(self, text="Password:").grid(row=4, column=10, padx=10, pady=10)
 
-        self.email_entry = Entry(self, width=35)
-        self.password_entry = Entry(self, width=35, show='*')
+        self.email_entry = ttk.Entry(self, width=35)
+        self.password_entry = ttk.Entry(self, width=35, show='*')
 
         self.email_entry.grid(row=3, column=11, padx=10, pady=10)
         self.password_entry.grid(row=4, column=11, padx=10, pady=10)
