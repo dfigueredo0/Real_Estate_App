@@ -1,4 +1,4 @@
-from db import get_connection
+from connection import get_connection
 from psycopg2 import sql, DatabaseError
 # TODO: user auth logic, change to use CLI/GUI (i.e. tkinter)
 
@@ -90,10 +90,86 @@ def update_property():
     """
     AGENT ONLY:
     """
-    pass
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        id = input("Enter Property ID: ")
+        i = True
+        while i:
+            selectData = input("What data do you want to modify? Select from the list\n\tA) City\n\tB) State\n\tC) Address\n\tD) Description\n\tE) Availability\n\tF) Rental Price\n\tG) Murder\n\tH) Robbery\n\tI) Battery\n\tJ) Nearby Schools\n\tK) Location\n\tL) Type\n")
+            if selectData in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']:
+                match selectData:
+                    case 'A':
+                        modify = input("Enter City: ")
+                        cursor.execute("UPDATE Property SET City = %s WHERE PropertyID = %s", (modify, id))
+                    case 'B':
+                        modify = input("Enter State: ")
+                        cursor.execute("UPDATE Property SET State = %s WHERE PropertyID = %s", (modify, id))
+                    case 'C':
+                        modify = input("Enter Address: ")
+                        cursor.execute("UPDATE Property SET Address = %s WHERE PropertyID = %s", (modify, id))
+                    case 'D':
+                        modify = input("Enter Description: ")
+                        cursor.execute("UPDATE Property SET Description = %s WHERE PropertyID = %s", (modify, id))
+                    case 'E':
+                        modify = input("Enter Availability: ")
+                        cursor.execute("UPDATE Property SET Availability = %s WHERE PropertyID = %s", (modify, id))
+                    case 'F':
+                        modify = input("Enter Rental Price: ")
+                        cursor.execute("UPDATE Property SET RentalPrice = %s WHERE PropertyID = %s", (modify, id))
+                    case 'G':
+                        modify = input("Enter Murder #: ")
+                        cursor.execute("UPDATE Property SET Murder = %s WHERE PropertyID = %s", (modify, id))
+                    case 'H':
+                        modify = input("Enter Robbery #: ")
+                        cursor.execute("UPDATE Property SET Robbery = %s WHERE PropertyID = %s", (modify, id))
+                    case 'I':
+                        modify = input("Enter Battery #: ")
+                        cursor.execute("UPDATE Property SET Battery = %s WHERE PropertyID = %s", (modify, id))
+                    case 'J':
+                        modify = input("Enter Nearby Schools: ")
+                        cursor.execute("UPDATE Property SET NearbySchools = %s WHERE PropertyID = %s", (modify, id))
+                    case 'K':
+                        modify = input("Enter Location: ")
+                        cursor.execute("UPDATE Property SET Location = %s WHERE PropertyID = %s", (modify, id))
+                    case 'L':
+                        modify = input("Enter Type: ")
+                        cursor.execute("UPDATE Property SET Type = %s WHERE PropertyID = %s", (modify, id))
+                conn.commit()
+                print(f"{cursor.rowcount} row(s) updated.")
+                i = False
+                
+
+    except DatabaseError as e:
+        conn.rollback()
+        return f"Database error: {e}"
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+            return "Connection closed"
 
 def delete_property():
     """
     AGENT ONLY:
     """
-    pass
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        id = input("Enter Property ID to delete: ")
+        cursor.execute("DELETE FROM Property WHERE PropertyID = %s", id)
+        conn.commit()
+        print(f"{cursor.rowcount} row(s) deleted.")
+
+    except DatabaseError as e:
+        conn.rollback()
+        return f"Database error: {e}"
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+            return "Connection closed"

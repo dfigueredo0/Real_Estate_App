@@ -1,4 +1,4 @@
-from db import get_connection
+from connection import get_connection
 from psycopg2 import sql, DatabaseError
 
 def book_property():

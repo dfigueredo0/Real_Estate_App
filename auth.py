@@ -1,6 +1,6 @@
 import psycopg2 
 from psycopg2 import sql, DatabaseError
-from db import get_connection
+from connection import get_connection
 # TODO: change to use CLI/GUI (i.e. tkinter)
 
 def register_user():
