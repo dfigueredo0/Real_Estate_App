@@ -16,7 +16,7 @@ def add_property():
         state = input("State: ")
         address = input("Address: ")
         desc = input("Description: ")
-        avail = input("Availability (Y/N): ")
+        avail = input("Availability: ")
         price = float(input("Rental Price: "))
         ptype = input("Type (house/apartment/commercial): ").lower()
     

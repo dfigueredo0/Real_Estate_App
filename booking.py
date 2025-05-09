@@ -10,10 +10,17 @@ def book_property():
         renter_email = input("Enter your email: ")
         card_num = input("Enter your credit card number: ")
 
+        cursor.execute("SELECT availability FROM property WHERE propertyid = %s", (pid,))
+        result = cursor.fetchone()
+        if not result:
+            return "Property not available for booking."
+        
         cursor.execute("""
             INSERT INTO booking (propertyid, renteremail, cardnum)
             VALUES (%s, %s, %s)
                       """, (pid, renter_email, card_num))
+        
+        cursor.execute("UPDATE property SET availability = FALSE WHERE propertyid = %s", (pid,))
         
         conn.commit()
         print("Property booked successfully.")
