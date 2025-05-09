@@ -243,19 +243,28 @@ def update_property(parent, property_id):
     update_prop_win.protocol("WM_DELETE_WINDOW", on_close)
 
 # TODO: delete_property
-def delete_property():
-    """
-    AGENT ONLY:
-    """
+def delete_property(property_id):
+    if not property_id:
+            messagebox.showerror("Missing Input", "Property ID cannot be empty.")
+            return
+    
     conn = get_connection()
-    cursor = conn.cursor()
-
+    cursor = conn.cursor()        
+    
     try:
-        id = input("Enter Property ID to delete: ")
-        cursor.execute("DELETE FROM Property WHERE PropertyID = %s", id)
-        conn.commit()
-        print(f"{cursor.rowcount} row(s) deleted.")
+        cursor.execute("SELECT type FROM property WHERE propertyid = %s", (property_id,))
+        result = cursor.fetchone()
+        if not result:
+            messagebox.showerror(message=f"Property ID {property_id} does not exists.")
+            return 
 
+        ptype = result[0].lower()
+
+        cursor.execute(sql.SQL("DELETE FROM {} WHERE propertyid = %s").format(sql.Identifier(ptype)), (property_id,))
+        cursor.execute("DELETE FROM Property WHERE propertyid = %s", (property_id,))
+
+        conn.commit()
+        messagebox.showinfo("Success", "Property deleted.")
     except DatabaseError as e:
         conn.rollback()
         return f"Database error: {e}"

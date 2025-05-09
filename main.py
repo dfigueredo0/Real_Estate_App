@@ -69,7 +69,7 @@ class App(ttk.Frame):
                 "role" : role
             }
             # Proceed to the next step in the application
-            self.property() #this is still based on property.py btw
+            self.property()
             print("finished 😫")
         else:
             messagebox.showinfo(result)
@@ -159,7 +159,7 @@ class App(ttk.Frame):
         property_id = askstring("Property ID", "Enter the Property ID:")
         if property_id is None:
             return None
-        update_property(self.parent, property_id)
+        return property_id
 
     def property(self):
         property_window = Toplevel(self.parent)
@@ -170,8 +170,8 @@ class App(ttk.Frame):
 
         if is_agent:
             ttk.Button(property_window, text="Add Property", command=lambda: add_property(self.parent)).grid(row=0, column=0, padx=10, pady=10, sticky=W)
-            ttk.Button(property_window, text="Update Property", command=lambda: self.prompt_pid()).grid(row=1, column=0, padx=10, pady=10, sticky=W)
-            ttk.Button(property_window, text="Delete Property", command=lambda: delete_property(self.parent)).grid(row=2, column=0, padx=10, pady=10, sticky=W)
+            ttk.Button(property_window, text="Update Property", command=lambda: update_property(self.parent, self.prompt_pid())).grid(row=1, column=0, padx=10, pady=10, sticky=W)
+            ttk.Button(property_window, text="Delete Property", command=lambda: delete_property(self.prompt_pid())).grid(row=2, column=0, padx=10, pady=10, sticky=W)
         
         ttk.Button(property_window, text="Search Property", command=lambda: search_property(self.parent)).grid(row=0, column=1, padx=10, pady=10, sticky=W)
         ttk.Button(property_window, text="Exit", command=property_window.destroy).grid(row=3, column=0, padx=10, pady=10, sticky=W)
