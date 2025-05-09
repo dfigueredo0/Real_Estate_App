@@ -1,6 +1,7 @@
 from tkinter import *
 from tkinter import ttk, messagebox
 from auth import register_user, login_user
+from property import *
 
 class App(ttk.Frame):
     def __init__(self, parent):
@@ -63,12 +64,9 @@ class App(ttk.Frame):
         
         result = login_user(email, password)
         if result == "Login successful.":
-            self.parent.destroy  # Hide the login window
-            main_window = Toplevel(self.parent)
-            main_window.title("Main Window")
-            main_window.geometry("800x600")
-            ttk.Label(main_window, text="Welcome to the Real Estate Application!").pack(pady=20)
-            ttk.Button(main_window, text="Exit", command=main_window.destroy).pack(pady=20)
+            # Proceed to the next step in the application
+            property_menu() #this is still based on property.py btw
+            print("finished 😫")
         else:
             messagebox.showinfo(result)
 
@@ -191,6 +189,16 @@ class App(ttk.Frame):
 
     def show_contact(self):
         messagebox.showinfo("Contact us at:", "Don't contact us.")
+
+    def property_menu(self):
+        register_window = Toplevel(self.parent)
+        register_window.title("Property")
+        register_window.geometry("800x600")
+
+        ttk.Button(register_window, text="Add Property", command=add_property).grid(row=0, column=0, padx=10, pady=10, sticky=W)
+        ttk.Button(register_window, text="Update Property", command=update_property).grid(row=1, column=0, padx=10, pady=10, sticky=W)
+        ttk.Button(register_window, text="Delete Property", command=delete_property).grid(row=2, column=0, padx=10, pady=10, sticky=W)
+        ttk.Button(register_window, text="Exit", command=register_window.destroy).grid(row=3, column=0, padx=10, pady=10, sticky=W)
 
 if __name__ == "__main__":
     rea = App(Tk())
