@@ -4,8 +4,6 @@ import bcrypt
 from psycopg2 import sql, DatabaseError
 from connection import get_connection
 
-# TODO: test edge cases, e.g. empty fields, invalid email format, etc.
-
 def hash_password(password):
     return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
 
@@ -19,6 +17,9 @@ def register_user(email, first_name, last_name, password, role, extra_info=None)
     if not valid_email(email):
         return "Invalid email format."
     
+    if len(password) < 8:
+        return "Password must be at least 8 characters long."
+
     conn = get_connection()
     cursor = conn.cursor()
     
