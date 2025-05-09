@@ -1,4 +1,4 @@
-from db import get_connection
+from connection import get_connection
 from psycopg2 import sql, DatabaseError
 # TODO: user auth logic, change to use CLI/GUI (i.e. tkinter)
 
@@ -16,7 +16,7 @@ def add_property():
         state = input("State: ")
         address = input("Address: ")
         desc = input("Description: ")
-        avail = input("Availability (Y/N): ")
+        avail = input("Availability: ")
         price = float(input("Rental Price: "))
         ptype = input("Type (house/apartment/commercial): ").lower()
     
