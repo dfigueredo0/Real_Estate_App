@@ -1,6 +1,6 @@
 from tkinter import *
 from tkinter import ttk, messagebox
-from auth import register_user, login_user
+from auth import *
 from property import *
 
 class App(ttk.Frame):
@@ -58,14 +58,17 @@ class App(ttk.Frame):
     def login(self):
         email = self.email_entry.get()
         password = self.password_entry.get()
-        if not email or not password:
-            messagebox.showinfo("Login Unsuccessful", "Please enter both email and password.")
-            return
         
-        result = login_user(email, password)
+        result = handle_login(email, password)
+
         if result == "Login successful.":
+            role = get_user_role(email)
+            self.current_user = {
+                "email" : email,
+                "role" : role
+            }
             # Proceed to the next step in the application
-            property_menu() #this is still based on property.py btw
+            self.property() #this is still based on property.py btw
             print("finished 😫")
         else:
             messagebox.showinfo(result)
@@ -86,99 +89,60 @@ class App(ttk.Frame):
         form_frame.grid(row=1, column=0, sticky=NSEW)
         form_frame.columnconfigure(1, weight=1)
 
-        labels = {
+        form = FormBuilder(form_frame)
+
+        user_fields = {
             "Email": StringVar(),
             "First Name": StringVar(),
             "Last Name": StringVar(),
             "Password": StringVar(),
         }
-        fields = {}
 
-        admin_fields = {
+        agent_fields = {
             "Job Title": StringVar(),
             "Agency": StringVar(),
             "Phone Number": StringVar(),
         }
-        admin_widgets = {}
 
-        for i, (label, var) in enumerate(labels.items()):
-            ttk.Label(form_frame, text=label).grid(row=i, column=0, padx=10, pady=5, sticky=E)
-            entry = ttk.Entry(form_frame, textvariable=var, show='*' if label == "Password" else None)
-            entry.grid(row=i, column=1, padx=10, pady=5, sticky=EW)
-            fields[label] = entry
+        renter_fields = {
+            "Budget" : DoubleVar(),
+            "Pregerred Location" : StringVar()
+        }
 
-        is_admin = BooleanVar()
-        ttk.Checkbutton(form_frame, text="Register as Admin", variable=is_admin).grid(row=len(fields), column=0, columnspan=2, pady=10)
+        is_agent = BooleanVar()
+        form.add_checkbutton("Register as an Agent", is_agent)
 
-        for i, (label, var) in enumerate(admin_fields.items()):
-            field = ttk.Label(form_frame, text=label)
-            entry = ttk.Entry(form_frame, textvariable=var)
-            field.grid(row=len(fields)+1+i, column=0, padx=10, pady=5, sticky=E)
-            entry.grid(row=len(fields)+1+i, column=1, padx=10, pady=5, sticky=EW)
-            field.grid_remove()
-            entry.grid_remove()
-            admin_widgets[label] = (field, entry)
+        form.add_fields(user_fields)
+        form.add_fields(agent_fields, hide=True)
+        form.add_fields(renter_fields)
 
-        budget_var = StringVar()
-        location_var = StringVar()
-
-        budget_label = ttk.Label(form_frame, text="Budget:")
-        budget_entry = ttk.Entry(form_frame, textvariable=budget_var)
-        location_label = ttk.Label(form_frame, text="Preferred Location:")
-        location_entry = ttk.Entry(form_frame, textvariable=location_var)
-
-        renter_row = len(fields) + len(admin_fields) + 1
-        budget_label.grid(row=renter_row, column=0, padx=10, pady=5, sticky=E)
-        budget_entry.grid(row=renter_row, column=1, padx=10, pady=5, sticky=EW)
-        location_label.grid(row=renter_row + 1, column=0, padx=10, pady=5, sticky=E)
-        location_entry.grid(row=renter_row + 1, column=1, padx=10, pady=5, sticky=EW)
-
-        def on_admin():
-            if is_admin.get():
-                for label, (l, e) in admin_widgets.items():
-                    l.grid()
-                    e.grid()
-                budget_label.grid_remove()
-                budget_entry.grid_remove()
-                location_label.grid_remove()
-                location_entry.grid_remove()
+        def toggle_agent_fields():
+            if is_agent.get():
+                form.show_field(agent_fields)
+                form.hide_field(renter_fields)
             else:
-                for label, (l, e) in admin_widgets.items():
-                    l.grid_remove()
-                    e.grid_remove()
-                budget_label.grid()
-                budget_entry.grid()
-                location_label.grid()
-                location_entry.grid()
+                form.hide_field(agent_fields)
+                form.show_field(renter_fields)
 
-        is_admin.trace_add("write", lambda *args: on_admin())
+        is_agent.trace_add("write", lambda *_, __=None: toggle_agent_fields())
 
-        def submit():
-            email = labels["Email"].get()
-            first_name = labels["First Name"].get()
-            last_name = labels["Last Name"].get()
-            password = labels["Password"].get()
-            role = "admin" if is_admin.get() else "user"
+        def on_submit():
+            result = process_registration_form(
+                fields=user_fields,
+                is_agent=is_agent,
+                agent_fields=agent_fields,
+                renter_fields=renter_fields
+            )
 
-            extra_info = {
-                "job_title": admin_fields["Job Title"].get() if is_admin.get() else None,
-                "agency": admin_fields["Agency"].get() if is_admin.get() else None,
-                "phone_number": admin_fields["Phone Number"].get() if is_admin.get() else None,
-                "budget": budget_var.get() if not is_admin.get() else None,
-                "location": location_var.get() if not is_admin.get() else None
-            }
-
-            result = register_user(email, first_name, last_name, password, role, extra_info)
             if result == "User registered successfully.":
                 messagebox.showinfo("Success", result)
                 register_window.destroy()
             else:
                 messagebox.showerror("Error", result)
 
-        ttk.Button(form_frame, text="Submit", command=submit).grid(row=renter_row + 2, column=0, columnspan=2, pady=10)
-        ttk.Button(form_frame, text="Cancel", command=register_window.destroy).grid(row=renter_row + 3, column=0, columnspan=2, pady=5)
+        form.add_submit_buttons(on_submit, register_window.destroy)
 
-        register_window.bind('<Return>', lambda event: submit())
+        register_window.bind('<Return>', lambda event: on_submit())
         register_window.bind('<Escape>', lambda event: register_window.destroy())
         
     def forgot_password(self):
@@ -190,15 +154,19 @@ class App(ttk.Frame):
     def show_contact(self):
         messagebox.showinfo("Contact us at:", "Don't contact us.")
 
-    def property_menu(self):
-        register_window = Toplevel(self.parent)
-        register_window.title("Property")
-        register_window.geometry("800x600")
+    def property(self):
+        property_window = Toplevel(self.parent)
+        property_window.title("Property")
+        property_window.geometry("800x600")
 
-        ttk.Button(register_window, text="Add Property", command=add_property).grid(row=0, column=0, padx=10, pady=10, sticky=W)
-        ttk.Button(register_window, text="Update Property", command=update_property).grid(row=1, column=0, padx=10, pady=10, sticky=W)
-        ttk.Button(register_window, text="Delete Property", command=delete_property).grid(row=2, column=0, padx=10, pady=10, sticky=W)
-        ttk.Button(register_window, text="Exit", command=register_window.destroy).grid(row=3, column=0, padx=10, pady=10, sticky=W)
+        is_agent = self.current_user.get("role") == "agent"
+
+        if is_agent:
+            ttk.Button(property_window, text="Add Property", command=lambda: add_property(self.parent)).grid(row=0, column=0, padx=10, pady=10, sticky=W)
+            ttk.Button(property_window, text="Update Property", command=lambda: update_property(self.parent)).grid(row=1, column=0, padx=10, pady=10, sticky=W)
+            ttk.Button(property_window, text="Delete Property", command=lambda: delete_property(self.parent)).grid(row=2, column=0, padx=10, pady=10, sticky=W)
+        
+        ttk.Button(property_window, text="Exit", command=property_window.destroy).grid(row=3, column=0, padx=10, pady=10, sticky=W)
 
 if __name__ == "__main__":
     rea = App(Tk())

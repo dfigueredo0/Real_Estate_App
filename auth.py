@@ -76,3 +76,51 @@ def login_user(email, password):
             cursor.close()
         if conn:
             conn.close()
+
+def handle_login(email, password):
+    if not email:
+        return "Please enter an email address"
+    if not password:
+        return "Please enter a password"
+    if not email or not password:
+        return "Please enter both email and password"
+    
+    result = login_user(email, password)
+    return result
+
+def process_registration_form(fields, is_agent, agent_fields, renter_fields):
+    email = fields["Email"].get()
+    first_name = fields["First Name"].get()
+    last_name = fields["Last Name"].get()
+    password = fields["Password"].get()
+    role = "agent" if is_agent.get() else "renter"
+
+    extra_info = {
+         "job_title": agent_fields["Job Title"].get() if is_agent.get() else None,
+        "agency": agent_fields["Agency"].get() if is_agent.get() else None,
+        "phone_number": agent_fields["Phone Number"].get() if is_agent.get() else None,
+        "budget": renter_fields["Budget"].get() if not is_agent.get() else None,
+        "location": renter_fields["Preferred Location"].get() if not is_agent.get() else None
+    }               
+
+    return register_user(email, first_name, last_name, password, role, extra_info)
+
+def get_user_role(email):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT roletype FROM users WHERE Email = %s", (email,))
+        result = cursor.fetchone()
+        if result[0]:
+            return "agent"  
+        else:
+            return "renter"
+    except DatabaseError as e:
+        conn.rollback()
+        return f"Database error: {e}"
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
