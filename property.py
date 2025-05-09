@@ -83,36 +83,92 @@ def add_property(parent):
     
     form.add_submit_buttons(submit, add_prop_win.destroy, "Exit")
 
-# TODO: search_property
-def search_property():
+def search_property(parent, current_user):
+    search_prop_win = Toplevel(parent)
+
+    fields = {
+        "City": StringVar(),
+        "State": StringVar(),
+        "Minimum Price": DoubleVar(),
+        "Maximum Price": DoubleVar()
+    } 
+
+    form = FormBuilder(search_prop_win)
+    form.add_fields(fields)
+
     conn = get_connection()
     cursor = conn.cursor()
 
-    try:
-        city = input("Enter city: ")
-        state = input("Enter state: ")
-        min_price = float(input("Enter minimum price: "))
-        max_price = float(input("Enter maximum price: "))
+    def submit():
+        values = form.get_values()
 
-        cursor.execute("""
-            SELECT * FROM property 
-            WHERE city = %s AND state = %s AND rentalprice BETWEEN %s AND %s AND availability = 'Y'
-        """, (city, state, min_price, max_price))
+        min_price = values["Minimum Price"] if values["Minimum Price"] else 0
+        max_price = values["Maximum Price"] if values["Maximum Price"] else 9999999999
 
-        properties = cursor.fetchall()
-        if not properties:
-            return "No properties found."
+        if  min_price > max_price:
+            messagebox.showerror("Invalid Price Range", "Minimum Price cannot be greater than Maximum Price.")
+            return
+                
+        base_query = """
+            SELECT propertyid, city, state, address, description, rentalprice
+            FROM property
+            WHERE availability = TRUE
+        """
 
-        for prop in properties:
-            print(prop)
-    except DatabaseError as e:
-        conn.rollback()
-        return f"Database error: {e}"
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
+        conditions = []
+        params= []
+
+        if values["City"]:
+            conditions.append("city = %s")
+            params.append(values["City"])
+
+        if values["State"]:
+            conditions.append("state = %s")
+            params.append(values["State"])
+
+        conditions.append("rentalprice BETWEEN %s AND %s")
+        params.extend([min_price, max_price])
+
+        final_query = base_query
+        if conditions:
+            final_query += " AND " + " AND ".join(conditions)
+
+        try:
+            cursor.execute(final_query, tuple(params))
+            properties = cursor.fetchall()
+
+            if not properties:
+                messagebox.showinfo("No Results", "No properties found matching the criteria.")
+                return
+
+            result_window = Toplevel(search_prop_win)
+            result_window.title("Search Results")
+
+            columns = ["propertyid", "city", "state", "address", "description", "rentalprice"]
+            result_tree = ttk.Treeview(result_window, columns=columns, show="headings")
+            for col in columns:
+                result_tree.heading(col, text=col.capitalize())
+                result_tree.column(col, anchor=CENTER)
+
+            result_tree.pack(fill=BOTH, expand=True)
+            for property in properties:
+                result_tree.insert("", "end", values=property)
+
+            if current_user["role"] == "agent":
+                result_tree.bind("<Double-1>", lambda event: update_property(result_window, result_tree.item(result_tree.selection())["values"][0]))
+        
+            result_window.protocol("WM_DELETE_WINDOW", lambda: (result_window.destroy(), search_prop_win.deiconify()))
+        except DatabaseError as e:
+            conn.rollback()
+            messagebox.showerror(message=f"Database Error: {e}")
+            return 
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+
+    form.add_submit_buttons(submit, search_prop_win.destroy, "Exit")
         
 def update_property(parent, property_id):
     update_prop_win = Toplevel(parent)
@@ -182,12 +238,12 @@ def update_property(parent, property_id):
 
         for field, value in values.items():
             if field in valid_fields and value not in (None, "", 0):
-                update_columns.append(field)
+                update_columns.append(map[field])
                 update_values.append(value)
 
         if any(values.get(k) for k in ["Address", "City", "State"]):
             location = f"{values.get('Address', '')}, {values.get('City', '')}, {values.get('State', '')}"
-            update_columns.append("Location")
+            update_columns.append("location")
             update_values.append(location)
 
         if not update_columns:

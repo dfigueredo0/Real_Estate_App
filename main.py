@@ -68,7 +68,7 @@ class App(ttk.Frame):
                 "email" : email,
                 "role" : role
             }
-            # Proceed to the next step in the application
+
             self.property()
             print("finished 😫")
         else:
@@ -173,7 +173,7 @@ class App(ttk.Frame):
             ttk.Button(property_window, text="Update Property", command=lambda: update_property(self.parent, self.prompt_pid())).grid(row=1, column=0, padx=10, pady=10, sticky=W)
             ttk.Button(property_window, text="Delete Property", command=lambda: delete_property(self.prompt_pid())).grid(row=2, column=0, padx=10, pady=10, sticky=W)
         
-        ttk.Button(property_window, text="Search Property", command=lambda: search_property(self.parent)).grid(row=0, column=1, padx=10, pady=10, sticky=W)
+        ttk.Button(property_window, text="Search Property", command=lambda: search_property(self.parent, self.current_user)).grid(row=0, column=1, padx=10, pady=10, sticky=W)
         ttk.Button(property_window, text="Exit", command=property_window.destroy).grid(row=3, column=0, padx=10, pady=10, sticky=W)
 
 if __name__ == "__main__":
