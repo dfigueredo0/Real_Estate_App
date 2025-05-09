@@ -1,37 +1,47 @@
 import psycopg2 
+import re
+import bcrypt
 from psycopg2 import sql, DatabaseError
-from db import get_connection
-# TODO: change to use CLI/GUI (i.e. tkinter)
+from connection import get_connection
 
-def register_user():
-    # TODO: Implement user registration logic
-    # For now, simple cmd inputs
-    email = input("Enter your email: ")
-    first_name = input("Enter your first name: ")
-    last_name = input("Enter your last name: ")
-    role = input("Enter your role (admin/user): ")
+# TODO: test edge cases, e.g. empty fields, invalid email format, etc.
 
+def hash_password(password):
+    return bcrypt.hashpw(password.encode('utf-8'), bcrypt.gensalt()).decode('utf-8')
+
+def verify_password(stored_password, provided_password):
+    return bcrypt.checkpw(provided_password.encode('utf-8'), stored_password.encode('utf-8'))
+
+def valid_email(email):
+    return bool(re.fullmatch(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,7}\b', email))
+
+def register_user(email, first_name, last_name, password, role, extra_info=None):
+    if not valid_email(email):
+        return "Invalid email format."
+    
     conn = get_connection()
     cursor = conn.cursor()
     
     try:
-        cursor.execute("SELECT * FROM user WHERE email = %s", (email))
+        cursor.execute("SELECT * FROM users WHERE Email = %s", (email,))
         if cursor.fetchone():
             return "User already exists."
         
-        cursor.execute("INSERT INTO user (Email, FirstName, LastName) VALUES (%s, %s, %s)", (email, first_name, last_name))
+        hashed_pw = hash_password(password)
+        cursor.execute("INSERT INTO users (Email, FirstName, LastName, HashPassword) VALUES (%s, %s, %s, %s)", (email, first_name, last_name, hashed_pw))
 
         if role == "admin":
-            job_title = input("Enter your job title: ")
-            agency = input("Enter your agency: ")
-            phone_number = input("Enter your phone number: ")
+            job_title = extra_info.get("job_title")
+            agency = extra_info.get("agency")
+            phone_number = extra_info.get("phone_number")
             cursor.execute("INSERT INTO agent VALUES (%s, %s, %s, %s)", (email, job_title, agency, phone_number))
         elif role == "user":
-            budget = input("Enter your budget: ")
-            loc = input("Enter your preffered location: ")
-            cursor.execute("INSERT INTO user (Email, FirstName, LastName) VALUES (%s, %s, %s)", (email, budget, loc))
+            budget = extra_info.get("budget")
+            loc = extra_info.get("location")
+            cursor.execute("INSERT INTO renter (Email, Budget, PreferredLocation) VALUES (%s, %s, %s)", (email, budget or None, loc or None))
 
         conn.commit()
+        return "User registered successfully."
     except DatabaseError as e:
         conn.rollback()
         return f"Database error: {e}"
@@ -40,6 +50,28 @@ def register_user():
             cursor.close()
         if conn:
             conn.close()
-            return "Connection closed."
-    
-    return "User registered successfully."
+
+def login_user(email, password):
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        cursor.execute("SELECT hashpassword FROM users WHERE Email = %s", (email,))
+        result = cursor.fetchone()
+
+        if not result:
+            return "User not found."
+        
+        stored_password = result[0]
+        if verify_password(stored_password, password):
+            return "Login successful."
+        else:
+            return "Invalid password."
+    except DatabaseError as e:
+        conn.rollback()
+        return f"Database error: {e}"
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()

@@ -1,5 +1,6 @@
 from tkinter import *
-from tkinter import ttk
+from tkinter import ttk, messagebox
+from auth import register_user, login_user
 
 class App(ttk.Frame):
     def __init__(self, parent):
@@ -37,21 +38,122 @@ class App(ttk.Frame):
         ttk.Button(self, text='Forgot Password', command=self.forgot_password).grid(row=4, column=12, padx=10, pady=10)
 
     def login(self):
-        pass
+        email = self.email_entry.get()
+        password = self.password_entry.get()
+        if not email or not password:
+            messagebox.showinfo("Login Unsuccessful", "Please enter both email and password.")
+            return
+        
+        result = login_user(email, password)
+        if result == "Login successful.":
+            messagebox.showinfo("Login successful.")
+            # Proceed to the next step in the application
+        else:
+            messagebox.showinfo(result)
 
     def register(self):
-        pass
+        register_window = Toplevel(self.parent)
+        register_window.title("Register")
+        register_window.geometry("800x600")
 
+        labels = {
+            "Email": StringVar(),
+            "First Name": StringVar(),
+            "Last Name": StringVar(),
+            "Password": StringVar(),
+        }
+        fields = {}
+
+        admin_fields = {
+            "Job Title": StringVar(),
+            "Agency": StringVar(),
+            "Phone Number": StringVar(),
+        }
+        admin_widgets = {}
+
+        for i, (label, var) in enumerate(labels.items()):
+            ttk.Label(register_window, text=label).grid(row=i, column=0, padx=10, pady=10, sticky=W)
+            entry = ttk.Entry(register_window, textvariable=var, width=35, show='*' if label == "Password" else None)
+            entry.grid(row=i, column=1, padx=10, pady=10)
+            fields[label] = entry
+
+        budget_var = StringVar()
+        budget_label = ttk.Label(register_window, text="Budget:")
+        budget_label.grid(row=len(fields)+2+len(admin_fields), column=0, padx=10, pady=10, sticky=W)
+        budget_entry = ttk.Entry(register_window, textvariable=budget_var, width=35)
+        budget_entry.grid(row=len(fields)+2+len(admin_fields), column=1, padx=10, pady=10)
+
+        location_var = StringVar()
+        location_label = ttk.Label(register_window, text="Preferred Location:")
+        location_label.grid(row=len(fields)+3+len(admin_fields), column=0, padx=10, pady=10, sticky=W)
+        location_entry = ttk.Entry(register_window, textvariable=location_var, width=35)
+        location_entry.grid(row=len(fields)+3+len(admin_fields), column=1, padx=10, pady=10)
+
+        def on_admin():
+            if is_admin.get():
+                for field, (label, entry) in admin_widgets.items():
+                    label.grid()
+                    entry.grid()
+                budget_label.grid_remove()
+                budget_entry.grid_remove()
+                location_label.grid_remove()
+                location_entry.grid_remove()
+            else:
+                for field, (label, entry) in admin_widgets.items():
+                    label.grid_remove()
+                    entry.grid_remove()
+                budget_label.grid()
+                budget_entry.grid()
+                location_label.grid()
+                location_entry.grid()
+
+        is_admin = BooleanVar()
+        ttk.Checkbutton(register_window, text="Register as Admin", variable=is_admin, command=on_admin).grid(row=len(fields), column=0, columnspan=2, pady=10)
+
+        for i, (label, var) in enumerate(admin_fields.items()):
+            field = ttk.Label(register_window, text=label)
+            field.grid(row=len(fields)+2+i, column=0, padx=10, pady=10, sticky=W)
+            entry = ttk.Entry(register_window, textvariable=var, width=35)
+            entry.grid(row=len(fields)+2+i, column=1, padx=10, pady=10)
+            field.grid_remove()
+            entry.grid_remove()
+            admin_widgets[label] = (field, entry)
+
+        
+
+        def submit():
+            email = labels["Email"].get()
+            first_name = labels["First Name"].get()
+            last_name = labels["Last Name"].get()
+            password = labels["Password"].get()
+            role = "admin" if is_admin.get() else "user"
+
+            extra_info = {
+                "job_title": admin_fields["Job Title"].get() if is_admin.get() else None,
+                "agency": admin_fields["Agency"].get() if is_admin.get() else None,
+                "phone_number": admin_fields["Phone Number"].get() if is_admin.get() else None,
+                "budget": budget_var.get() if not is_admin.get() else None,
+                "location": location_var.get() if not is_admin.get() else None
+            }
+        
+            result = register_user(email, first_name, last_name, password, role, extra_info)
+
+            if result == "User registered successfully.":
+                messagebox.showinfo("Success", result)
+                register_window.destroy()
+            else:
+                messagebox.showerror("Error", result)
+        
+        ttk.Button(register_window, text="Submit", command=submit).grid(row=len(fields), column=3, columnspan=2, pady=10)
+        
     def forgot_password(self):
-        pass
+        messagebox.showinfo("Forgot Password", "Not Implemented yet.")
 
     def show_about(self):
-        print("About clicked")
+        messagebox.showinfo("About", "Real Estate Application\nVersion 1.0\nDeveloped by Dylan Figueredo, Kyle Grant, and Martin Harmon")
 
     def show_contact(self):
-        print("Contact clicked")
-
-
+        messagebox.showinfo("Contact us at:", "Don't contact us.")
 
 if __name__ == "__main__":
     rea = App(Tk())
