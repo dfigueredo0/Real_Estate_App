@@ -1,148 +1,89 @@
 from connection import get_connection
+from utils.forms import FormBuilder
 from psycopg2 import sql, DatabaseError
-# TODO: user auth logic, change to use CLI/GUI (i.e. tkinter)
 
 from tkinter import *
 from tkinter import ttk, messagebox
 
-def property_menu():
-    register_window = Toplevel()
-    register_window.title("Property")
-    register_window.geometry("800x600")
+def add_property(parent):
+    add_prop_win = Toplevel(parent)
 
-    ttk.Button(register_window, text="Add Property", command=add_property).grid(row=0, column=0, padx=10, pady=10, sticky=W)
-    ttk.Button(register_window, text="Update Property", command=update_property).grid(row=1, column=0, padx=10, pady=10, sticky=W)
-    ttk.Button(register_window, text="Delete Property", command=delete_property).grid(row=2, column=0, padx=10, pady=10, sticky=W)
-    ttk.Button(register_window, text="Exit", command=register_window.destroy).grid(row=3, column=0, padx=10, pady=10, sticky=W)
+    fields = {
+        "Property ID" : StringVar(),
+        "City" : StringVar(),
+        "State" : StringVar(),
+        "Address" : StringVar(), 
+        "Description" : StringVar(),
+        "Rental Price" : DoubleVar(),
+        "Murder" : IntVar(),
+        "Robbery" : IntVar(),
+        "Battery" : IntVar(),
+        "Nearby Schools" : StringVar(),
+        "Type" : StringVar(),
+        "Number Of Rooms" : IntVar(),
+        "Square Footage" : IntVar()
+    }
 
-
-def add_property():
-    """ 
-    AGENT ONLY: 
-    Add a new property to the database.
-    """
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    register_window = Toplevel()
-    register_window.title("Add Property")
-    register_window.geometry("800x600")
-    ttk.Label(register_window, text="Property ID:").grid(row=1, column=10, padx=10, pady=10)
-    ttk.Label(register_window, text="City:").grid(row=2, column=10, padx=10, pady=10)
-    ttk.Label(register_window, text="State:").grid(row=3, column=10, padx=10, pady=10)
-    ttk.Label(register_window, text="Address:").grid(row=4, column=10, padx=10, pady=10)
-    ttk.Label(register_window, text="Description:").grid(row=5, column=10, padx=10, pady=10)
-    ttk.Label(register_window, text="Availability:").grid(row=6, column=10, padx=10, pady=10)
-    ttk.Label(register_window, text="Rental Price:").grid(row=7, column=10, padx=10, pady=10)
-    ttk.Label(register_window, text="Type:").grid(row=8, column=10, padx=10, pady=10)
-    ttk.Label(register_window, text="Rooms:").grid(row=9, column=12, padx=10, pady=10)
-    ttk.Label(register_window, text="Sqft:").grid(row=10, column=12, padx=10, pady=10)
-
-    id_entry = ttk.Entry(register_window, width=35)
-    city_entry = ttk.Entry(register_window, width=35)
-    state_entry = ttk.Entry(register_window, width=35)
-    address_entry = ttk.Entry(register_window, width=35)
-    description_entry = ttk.Entry(register_window, width=35)
-    availability_entry = ttk.Entry(register_window, width=35)
-    price_entry = ttk.Entry(register_window, width=35)
-    type_entry = ttk.Entry(register_window, width=35)
-    room_entry = ttk.Entry(register_window, width=35)
-    sqft_entry = ttk.Entry(register_window, width=35)
-
-    id_entry.grid(row=1, column=11, padx=10, pady=10)
-    city_entry.grid(row=2, column=11, padx=10, pady=10)
-    state_entry.grid(row=3, column=11, padx=10, pady=10)
-    address_entry.grid(row=4, column=11, padx=10, pady=10)
-    description_entry.grid(row=5, column=11, padx=10, pady=10)
-    availability_entry.grid(row=6, column=11, padx=10, pady=10)
-    price_entry.grid(row=7, column=11, padx=10, pady=10)
-    type_entry.grid(row=8, column=11, padx=10, pady=10)
-    room_entry.grid(row=9, column=13, padx=10, pady=10)
-    sqft_entry.grid(row=10, column=13, padx=10, pady=10)
-
+    form = FormBuilder(add_prop_win)
+    form.add_fields(fields)
+    
     def submit():
-        pid = id_entry.get()
-        city = city_entry.get()
-        state = state_entry.get()
-        address = address_entry.get()
-        desc = description_entry.get()
-        avail = availability_entry.get()
-        price = price_entry.get()
-        type = type_entry.get()
-        room = room_entry.get()
-        sqft = sqft_entry.get()
+        conn = get_connection()
+        cursor = conn.cursor()
+        values = form.get_values()
+
+        location = f"{values['Address']}, {values['City']}, {values['State']}"
+        pid = values['Property ID']
+
         try:
+            cursor.execute("SELECT 1 FROM property WHERE propertyid = %s", (pid,))
+            if cursor.fetchone():
+                messagebox.showerror(message=f"Duplicate Entry, Property ID {pid} already exists.")
+                return 
+
             cursor.execute("""
-                INSERT INTO property (propertyid, city, state, address, description, availability, rentalprice)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-            """, (pid, city, state, address, desc, avail, price))
+                            INSERT INTO property (propertyid, city, state, address, description, rentalprice, 
+                            murder, robbery, battery, nearbyschools, location, type)
+                            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+                           """, (
+                                pid, values['City'], values['State'], values['Address'], values['Description'],
+                                values['Rental Price'], values['Murder'], values['Robbery'], values['Battery'],
+                                values['Nearby Schools'], location, values['Type']
+                           ))
+            
+            ptype = values['Type'].lower()
+            rooms = values['Number Of Rooms']
+            sqft = values['Square Footage']
+
+            match ptype:
+                case 'house':
+                    cursor.execute("INSERT INTO house (propertyid, numberofrooms, squarefootage) VALUES (%s, %s, %s)", (pid, rooms, sqft))
+                case 'apartment':
+                    cursor.execute("INSERT INTO apartment (propertyid, numberofrooms, squarefootage, buildingtype) VALUES (%s, %s, %s, %s)", (pid, rooms, sqft, "Standard"))
+                case 'commercialbuilding':
+                    cursor.execute("INSERT INTO commercialbuilding (propertyid, squarefootage, businesstype) VALUES (%s, %s, %s)", (pid, sqft, "General"))
+                case 'vacationhomes':
+                    cursor.execute("INSERT INTO vacationhomes (propertyid, numberofrooms, squarefootage) VALUES (%s, %s, %s)", (pid, rooms, sqft))
+                case 'land':
+                    cursor.execute("INSERT INTO land (propertyid, squarefootage) VALUES (%s, %s, %s)", (pid, rooms, sqft))
+                case _:
+                    return messagebox.showwarning(message=f"Property type: {ptype} unsuporrted")
+                
             conn.commit()
-            print(f"{cursor.rowcount} row(s) added.")
+            messagebox.showinfo("Success", "Property added.")
+            add_prop_win.destroy()
         except DatabaseError as e:
             conn.rollback()
-            return f"Database error: {e}"
+            return f"Database Error: {e}"
         finally:
             if cursor:
                 cursor.close()
             if conn:
                 conn.close()
-                return "Connection closed."
-        
-    ttk.Button(register_window, text="Submit", command=submit).grid(row=11, column=3, columnspan=2, pady=10)
-
-def add_property_old():
-    """ 
-    AGENT ONLY: 
-    Add a new property to the database.
-    """
-    conn = get_connection()
-    cursor = conn.cursor()
-
-    try:
-        pid = input("Enter Property ID: ")
-        city = input("City: ")
-        state = input("State: ")
-        address = input("Address: ")
-        desc = input("Description: ")
-        avail = input("Availability: ")
-        price = float(input("Rental Price: "))
-        ptype = input("Type (house/apartment/commercial): ").lower()
     
-        cursor.execute("""
-            INSERT INTO property (propertyid, city, state, address, description, availability, rentalprice)
-            VALUES (%s, %s, %s, %s, %s, %s, %s)
-        """, (pid, city, state, address, desc, avail, price))
+    form.add_submit_buttons(submit, add_prop_win.destroy, "Exit")
 
-        if ptype == "house":
-            rooms = input("rooms: ")
-            sqft = input("sqft: ")
-        elif ptype == "apartment":
-            rooms = input("rooms: ")
-            sqft = input("sqft: ")
-        elif ptype == "commercialbuilding":
-            rooms = input("rooms: ")
-            sqft = input("sqft: ")
-        elif ptype == "vacationhomes":
-            rooms = input("rooms: ")
-            sqft = input("sqft: ")
-        elif ptype == "land":
-            sqft = input("sqft: ")
-        else:
-            return "Invalid property type."
-            
-
-        conn.commit()
-        print("Property added.")
-    except DatabaseError as e:
-        conn.rollback()
-        return f"Database error: {e}"
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
-            return "Connection closed."
-
+# TODO: search_property
 def search_property():
     conn = get_connection()
     cursor = conn.cursor()
@@ -172,73 +113,136 @@ def search_property():
             cursor.close()
         if conn:
             conn.close()
-            return "Connection closed."
         
-def update_property():
-    """
-    AGENT ONLY:
-    """
+def update_property(parent, property_id):
+    update_prop_win = Toplevel(parent)
+    update_prop_win.title(f"Update Property {property_id}")
+
+    valid_fields = { 
+        "City": StringVar(),
+        "State": StringVar(),
+        "Address": StringVar(),
+        "Description": StringVar(),
+        "Availability": BooleanVar(),
+        "RentalPrice": DoubleVar(),
+        "Murder": IntVar(),
+        "Robbery": IntVar(),
+        "Battery": IntVar(),
+        "NearbySchools": StringVar(),
+        "Type": StringVar()
+    }
+
+    map = { field: field.lower().replace(" ", "").replace("_", "") for field in valid_fields.keys() }
+    map["Location"] = "location"
+    map["PropertyID"] = "propertyid"
+
+    form = FormBuilder(update_prop_win)
+    form.add_fields(valid_fields)
+
     conn = get_connection()
     cursor = conn.cursor()
 
     try:
-        id = input("Enter Property ID: ")
-        i = True
-        while i:
-            selectData = input("What data do you want to modify? Select from the list\n\tA) City\n\tB) State\n\tC) Address\n\tD) Description\n\tE) Availability\n\tF) Rental Price\n\tG) Murder\n\tH) Robbery\n\tI) Battery\n\tJ) Nearby Schools\n\tK) Location\n\tL) Type\n")
-            if selectData in ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L']:
-                match selectData:
-                    case 'A':
-                        modify = input("Enter City: ")
-                        cursor.execute("UPDATE Property SET City = %s WHERE PropertyID = %s", (modify, id))
-                    case 'B':
-                        modify = input("Enter State: ")
-                        cursor.execute("UPDATE Property SET State = %s WHERE PropertyID = %s", (modify, id))
-                    case 'C':
-                        modify = input("Enter Address: ")
-                        cursor.execute("UPDATE Property SET Address = %s WHERE PropertyID = %s", (modify, id))
-                    case 'D':
-                        modify = input("Enter Description: ")
-                        cursor.execute("UPDATE Property SET Description = %s WHERE PropertyID = %s", (modify, id))
-                    case 'E':
-                        modify = input("Enter Availability: ")
-                        cursor.execute("UPDATE Property SET Availability = %s WHERE PropertyID = %s", (modify, id))
-                    case 'F':
-                        modify = input("Enter Rental Price: ")
-                        cursor.execute("UPDATE Property SET RentalPrice = %s WHERE PropertyID = %s", (modify, id))
-                    case 'G':
-                        modify = input("Enter Murder #: ")
-                        cursor.execute("UPDATE Property SET Murder = %s WHERE PropertyID = %s", (modify, id))
-                    case 'H':
-                        modify = input("Enter Robbery #: ")
-                        cursor.execute("UPDATE Property SET Robbery = %s WHERE PropertyID = %s", (modify, id))
-                    case 'I':
-                        modify = input("Enter Battery #: ")
-                        cursor.execute("UPDATE Property SET Battery = %s WHERE PropertyID = %s", (modify, id))
-                    case 'J':
-                        modify = input("Enter Nearby Schools: ")
-                        cursor.execute("UPDATE Property SET NearbySchools = %s WHERE PropertyID = %s", (modify, id))
-                    case 'K':
-                        modify = input("Enter Location: ")
-                        cursor.execute("UPDATE Property SET Location = %s WHERE PropertyID = %s", (modify, id))
-                    case 'L':
-                        modify = input("Enter Type: ")
-                        cursor.execute("UPDATE Property SET Type = %s WHERE PropertyID = %s", (modify, id))
-                conn.commit()
-                print(f"{cursor.rowcount} row(s) updated.")
-                i = False
-                
+        cursor.execute("SELECT type FROM property WHERE propertyid = %s", (property_id,))
+        result = cursor.fetchone()
+        if not result:
+            messagebox.showerror(message=f"Property ID {property_id} not found.")
+            update_prop_win.destroy()
+            return
+        ptype = result[0].lower()
 
+        type_fields = {}
+        if ptype in {"house", "vacationhomes", "apartment"}:
+            type_fields["NumberOfRooms"] = IntVar()
+            type_fields["SquareFootage"] = IntVar()
+        elif ptype in {"commercialbuilding", "land"}:
+            type_fields["SquareFootage"] = IntVar()
+
+        form.add_fields(type_fields)
+
+        if not form.load_from_db(cursor, "property", "propertyid", property_id, valid_fields):
+            messagebox.showerror(message=f"Property ID {property_id} does not exist.")
+            update_prop_win.destroy()
+            return
+        
+        if not form.load_from_db(cursor, ptype, "propertyid", property_id, type_fields):
+            messagebox.showerror(message=f"Property ID {property_id} does not exist.")
+            update_prop_win.destroy()
+            return
     except DatabaseError as e:
         conn.rollback()
-        return f"Database error: {e}"
-    finally:
-        if cursor:
-            cursor.close()
-        if conn:
-            conn.close()
-            return "Connection closed"
+        messagebox.showerror(message=f"Database Error: {e}")
+        update_prop_win.destroy()
+        return
 
+    def submit():
+        values = form.get_values()
+        update_values = []
+        update_columns = []
+
+        for field, value in values.items():
+            if field in valid_fields and value not in (None, "", 0):
+                update_columns.append(field)
+                update_values.append(value)
+
+        if any(values.get(k) for k in ["Address", "City", "State"]):
+            location = f"{values.get('Address', '')}, {values.get('City', '')}, {values.get('State', '')}"
+            update_columns.append("Location")
+            update_values.append(location)
+
+        if not update_columns:
+            messagebox.showinfo("No Updates", "Please fill in at least one field to update.")
+            return
+
+        update_values.append(property_id)
+
+        assignments = [
+            sql.SQL("{} = %s").format(sql.Identifier(col)) for col in update_columns
+        ]
+        query = sql.SQL("UPDATE Property SET {} WHERE propertyid = %s").format(
+            sql.SQL(", ").join(assignments)
+        )
+
+        try:
+            cursor.execute(query, tuple(update_values))
+
+            type_update_values = []
+            type_update_columns = []
+            if "NumberOfRooms" in values:
+                type_update_columns.append("numberofrooms")
+                type_update_values.append(values["NumberOfRooms"])
+            if "SquareFootage" in values:
+                type_update_columns.append("squarefootage")
+                type_update_values.append(values["SquareFootage"])
+
+            if type_update_columns:
+                set_clause = ", ".join(f"{col} = %s" for col in type_update_columns)
+                type_update_values.append(property_id)
+                cursor.execute(
+                    f"UPDATE {ptype} SET {set_clause} WHERE propertyid = %s",
+                    tuple(type_update_values)
+                )
+
+            conn.commit()
+            messagebox.showinfo("Success", "Property updated.")
+            update_prop_win.destroy()
+        except DatabaseError as e:
+            conn.rollback()
+            messagebox.showerror(message=f"Database Error: {e}")
+        finally:
+            cursor.close()
+            conn.close()
+
+    form.add_submit_buttons(submit, update_prop_win.destroy, "Exit")
+
+    def on_close():
+        cursor.close()
+        conn.close()
+        update_prop_win.destroy()
+
+    update_prop_win.protocol("WM_DELETE_WINDOW", on_close)
+
+# TODO: delete_property
 def delete_property():
     """
     AGENT ONLY:
@@ -260,4 +264,3 @@ def delete_property():
             cursor.close()
         if conn:
             conn.close()
-            return "Connection closed"

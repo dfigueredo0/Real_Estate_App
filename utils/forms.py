@@ -6,15 +6,19 @@ class FormBuilder:
         self.frame = ttk.Frame(parent)
         self.frame.pack(expand=True, fill='both')
         self.fields = {}
+        self.widgets = {}
         self.row = 0
 
     def add_fields(self, fields_dict, hide=False):
         for label, var in fields_dict.items():
             l = ttk.Label(self.frame, text=label)
             entry = ttk.Entry(self.frame, textvariable=var, show='*' if 'Password' in label else None)
+
             l.grid(row=self.row, column=0, padx=10, pady=5, sticky=E)
             entry.grid(row=self.row, column=1, padx=10, pady=5, sticky=EW)
-            self.fields[label] = (l, entry)
+
+            self.fields[label] = (entry, var)
+            self.widgets[label] = (l, entry)
 
             if hide:
                 l.grid_remove()
@@ -22,23 +26,39 @@ class FormBuilder:
             
             self.row += 1
 
+    def load_from_db(self, cursor, table_name, id_field, id_value, fields):
+        cursor.execute(f"SELECT * FROM {table_name} WHERE {id_field} = %s", (id_value,))
+        data = cursor.fetchone()
+
+        if not data:
+            return False
+
+        field_names_db = [desc[0] for desc in cursor.description]
+        for field, value in zip(field_names_db, data):
+            for label, var in fields.items():
+                db_field = label.lower().replace(" ", "")
+                if db_field == field.lower():
+                    self.set_field(label, value)
+        return True
+
     def get_values(self):
-        return {label: var.get() for label, var in self.fields.items()}
+        return {label: var.get() for label, (_, var) in self.fields.items()}
     
     def get_field(self, label):
         return self.fields[label]
     
     def set_field(self, label, value):
-        self.fields[label].set(value)
+        _, var = self.fields[label]
+        var.set(value)
     
-    def hide_field(self, fields_dict):
-        for label in fields_dict:
+    def hide_field(self, labels):
+        for label in labels:
             l, e = self.widgets[label]
             l.grid_remove()
             e.grid_remove()
 
-    def show_field(self, fields_dict):
-        for label in fields_dict:
+    def show_field(self, labels):
+        for label in labels:
             l, e = self.widgets[label]
             l.grid()
             e.grid()
@@ -51,3 +71,4 @@ class FormBuilder:
     def add_submit_buttons(self, submit_command, cancel_command, cancel_text="Cancel"):
         ttk.Button(self.frame, text="Submit", command=submit_command).grid(row=self.row, column=0, pady=10)
         ttk.Button(self.frame, text=cancel_text, command=cancel_command).grid(row=self.row, column=1, pady=10)
+        self.row += 1
