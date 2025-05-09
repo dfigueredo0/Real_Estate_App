@@ -2,7 +2,95 @@ from connection import get_connection
 from psycopg2 import sql, DatabaseError
 # TODO: user auth logic, change to use CLI/GUI (i.e. tkinter)
 
+from tkinter import *
+from tkinter import ttk, messagebox
+
+def property_menu():
+    register_window = Toplevel()
+    register_window.title("Property")
+    register_window.geometry("800x600")
+
+    ttk.Button(register_window, text="Add Property", command=add_property).grid(row=0, column=0, padx=10, pady=10, sticky=W)
+    ttk.Button(register_window, text="Update Property", command=update_property).grid(row=1, column=0, padx=10, pady=10, sticky=W)
+    ttk.Button(register_window, text="Delete Property", command=delete_property).grid(row=2, column=0, padx=10, pady=10, sticky=W)
+    ttk.Button(register_window, text="Exit", command=register_window.destroy).grid(row=3, column=0, padx=10, pady=10, sticky=W)
+
+
 def add_property():
+    """ 
+    AGENT ONLY: 
+    Add a new property to the database.
+    """
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    register_window = Toplevel()
+    register_window.title("Add Property")
+    register_window.geometry("800x600")
+    ttk.Label(register_window, text="Property ID:").grid(row=1, column=10, padx=10, pady=10)
+    ttk.Label(register_window, text="City:").grid(row=2, column=10, padx=10, pady=10)
+    ttk.Label(register_window, text="State:").grid(row=3, column=10, padx=10, pady=10)
+    ttk.Label(register_window, text="Address:").grid(row=4, column=10, padx=10, pady=10)
+    ttk.Label(register_window, text="Description:").grid(row=5, column=10, padx=10, pady=10)
+    ttk.Label(register_window, text="Availability:").grid(row=6, column=10, padx=10, pady=10)
+    ttk.Label(register_window, text="Rental Price:").grid(row=7, column=10, padx=10, pady=10)
+    ttk.Label(register_window, text="Type:").grid(row=8, column=10, padx=10, pady=10)
+    ttk.Label(register_window, text="Rooms:").grid(row=9, column=12, padx=10, pady=10)
+    ttk.Label(register_window, text="Sqft:").grid(row=10, column=12, padx=10, pady=10)
+
+    id_entry = ttk.Entry(register_window, width=35)
+    city_entry = ttk.Entry(register_window, width=35)
+    state_entry = ttk.Entry(register_window, width=35)
+    address_entry = ttk.Entry(register_window, width=35)
+    description_entry = ttk.Entry(register_window, width=35)
+    availability_entry = ttk.Entry(register_window, width=35)
+    price_entry = ttk.Entry(register_window, width=35)
+    type_entry = ttk.Entry(register_window, width=35)
+    room_entry = ttk.Entry(register_window, width=35)
+    sqft_entry = ttk.Entry(register_window, width=35)
+
+    id_entry.grid(row=1, column=11, padx=10, pady=10)
+    city_entry.grid(row=2, column=11, padx=10, pady=10)
+    state_entry.grid(row=3, column=11, padx=10, pady=10)
+    address_entry.grid(row=4, column=11, padx=10, pady=10)
+    description_entry.grid(row=5, column=11, padx=10, pady=10)
+    availability_entry.grid(row=6, column=11, padx=10, pady=10)
+    price_entry.grid(row=7, column=11, padx=10, pady=10)
+    type_entry.grid(row=8, column=11, padx=10, pady=10)
+    room_entry.grid(row=9, column=13, padx=10, pady=10)
+    sqft_entry.grid(row=10, column=13, padx=10, pady=10)
+
+    def submit():
+        pid = id_entry.get()
+        city = city_entry.get()
+        state = state_entry.get()
+        address = address_entry.get()
+        desc = description_entry.get()
+        avail = availability_entry.get()
+        price = price_entry.get()
+        type = type_entry.get()
+        room = room_entry.get()
+        sqft = sqft_entry.get()
+        try:
+            cursor.execute("""
+                INSERT INTO property (propertyid, city, state, address, description, availability, rentalprice)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+            """, (pid, city, state, address, desc, avail, price))
+            conn.commit()
+            print(f"{cursor.rowcount} row(s) added.")
+        except DatabaseError as e:
+            conn.rollback()
+            return f"Database error: {e}"
+        finally:
+            if cursor:
+                cursor.close()
+            if conn:
+                conn.close()
+                return "Connection closed."
+        
+    ttk.Button(register_window, text="Submit", command=submit).grid(row=11, column=3, columnspan=2, pady=10)
+
+def add_property_old():
     """ 
     AGENT ONLY: 
     Add a new property to the database.
