@@ -6,6 +6,7 @@ from auth import *
 from property import *
 from payment import *
 
+
 class App(ttk.Frame):
     def __init__(self, parent):
         super().__init__(parent)
@@ -32,18 +33,20 @@ class App(ttk.Frame):
         container.pack(expand=True, fill='both')
 
         container.rowconfigure(0, weight=1)
-        container.rowconfigure(2, weight=1) # for spacing
+        container.rowconfigure(2, weight=1)  # for spacing
         container.columnconfigure(0, weight=1)
 
         login_frame = ttk.Frame(container)
-        login_frame.grid(row=1, column=0, sticky=NSEW) # row 1 = center row.
+        login_frame.grid(row=1, column=0, sticky=NSEW)  # row 1 = center row.
 
         login_frame.columnconfigure(1, weight=1)
 
         login_frame.rowconfigure(0, weight=1)
 
-        ttk.Label(login_frame, text="Email:").grid(row=0, column=0, padx=10, pady=10, sticky=E)
-        ttk.Label(login_frame, text="Password:").grid(row=1, column=0, padx=10, pady=10, sticky=E)
+        ttk.Label(login_frame, text="Email:").grid(
+            row=0, column=0, padx=10, pady=10, sticky=E)
+        ttk.Label(login_frame, text="Password:").grid(
+            row=1, column=0, padx=10, pady=10, sticky=E)
 
         self.email_entry = ttk.Entry(login_frame, width=30)
         self.password_entry = ttk.Entry(login_frame, width=30, show='*')
@@ -51,28 +54,33 @@ class App(ttk.Frame):
         self.email_entry.grid(row=0, column=1, padx=10, pady=10, sticky=EW)
         self.password_entry.grid(row=1, column=1, padx=10, pady=10, sticky=EW)
 
-        ttk.Button(login_frame, text='Login', command=self.login).grid(row=3, column=0, columnspan=2, pady=5)
-        ttk.Button(login_frame, text='Register', command=self.register).grid(row=4, column=0, columnspan=2, pady=5)
-        ttk.Button(login_frame, text='Forgot Password', command=self.forgot_password).grid(row=2, column=0, columnspan=2, pady=5)
-        ttk.Button(login_frame, text='Exit', command=self.quit).grid(row=5, column=0, columnspan=2, pady=10)
-        
-        self.parent.bind('<Return>', lambda event: self.login()) # Bind Enter key to login
+        ttk.Button(login_frame, text='Login', command=self.login).grid(
+            row=3, column=0, columnspan=2, pady=5)
+        ttk.Button(login_frame, text='Register', command=self.register).grid(
+            row=4, column=0, columnspan=2, pady=5)
+        ttk.Button(login_frame, text='Forgot Password', command=self.forgot_password).grid(
+            row=2, column=0, columnspan=2, pady=5)
+        ttk.Button(login_frame, text='Exit', command=self.quit).grid(
+            row=5, column=0, columnspan=2, pady=10)
+
+        # Bind Enter key to login
+        self.parent.bind('<Return>', lambda event: self.login())
 
     def login(self):
         email = self.email_entry.get()
         password = self.password_entry.get()
-        
+
         result = handle_login(email, password)
 
         if result == "Login successful.":
             role = get_user_role(email)
             self.current_user = {
-                "email" : email,
-                "role" : role
+                "email": email,
+                "role": role
             }
 
             self.property()
-            
+
             if role == "renter":
                 self.payment()
 
@@ -112,8 +120,8 @@ class App(ttk.Frame):
         }
 
         renter_fields = {
-            "Budget" : DoubleVar(),
-            "Pregerred Location" : StringVar()
+            "Budget": DoubleVar(),
+            "Pregerred Location": StringVar()
         }
 
         is_agent = BooleanVar()
@@ -150,13 +158,15 @@ class App(ttk.Frame):
         form.add_submit_buttons(on_submit, register_window.destroy)
 
         register_window.bind('<Return>', lambda event: on_submit())
-        register_window.bind('<Escape>', lambda event: register_window.destroy())
-        
+        register_window.bind(
+            '<Escape>', lambda event: register_window.destroy())
+
     def forgot_password(self):
         messagebox.showinfo("Forgot Password", "Not Implemented yet.")
 
     def show_about(self):
-        messagebox.showinfo("About", "Real Estate Application\nVersion 1.0\nDeveloped by Dylan Figueredo, Kyle Grant, and Martin Harmon")
+        messagebox.showinfo(
+            "About", "Real Estate Application\nVersion 1.0\nDeveloped by Dylan Figueredo, Kyle Grant, and Martin Harmon")
 
     def show_contact(self):
         messagebox.showinfo("Contact us at:", "Don't contact us.")
@@ -167,6 +177,12 @@ class App(ttk.Frame):
             return None
         return property_id
 
+    def prompt_card_number(self):
+        card_number = askstring("Card Number", "Enter your Card Number")
+        if card_number is None:
+            return None
+        return card_number
+
     def property(self):
         property_window = Toplevel(self.parent)
         property_window.title("Property")
@@ -175,21 +191,34 @@ class App(ttk.Frame):
         is_agent = self.current_user.get("role") == "agent"
 
         if is_agent:
-            ttk.Button(property_window, text="Add Property", command=lambda: add_property(self.parent)).grid(row=0, column=0, padx=10, pady=10, sticky=W)
-            ttk.Button(property_window, text="Update Property", command=lambda: update_property(self.parent, self.prompt_pid())).grid(row=1, column=0, padx=10, pady=10, sticky=W)
-            ttk.Button(property_window, text="Delete Property", command=lambda: delete_property(self.prompt_pid())).grid(row=2, column=0, padx=10, pady=10, sticky=W)
-        
-        ttk.Button(property_window, text="Search Property", command=lambda: search_property(self.parent, self.current_user)).grid(row=0, column=1, padx=10, pady=10, sticky=W)
-        ttk.Button(property_window, text="Exit", command=property_window.destroy).grid(row=3, column=0, padx=10, pady=10, sticky=W)
-    
+            ttk.Button(property_window, text="Add Property", command=lambda: add_property(
+                self.parent)).grid(row=0, column=0, padx=10, pady=10, sticky=W)
+            ttk.Button(property_window, text="Update Property", command=lambda: update_property(
+                self.parent, self.prompt_pid())).grid(row=1, column=0, padx=10, pady=10, sticky=W)
+            ttk.Button(property_window, text="Delete Property", command=lambda: delete_property(
+                self.prompt_pid())).grid(row=2, column=0, padx=10, pady=10, sticky=W)
+
+        ttk.Button(property_window, text="Search Property", command=lambda: search_property(
+            self.parent, self.current_user)).grid(row=0, column=1, padx=10, pady=10, sticky=W)
+        ttk.Button(property_window, text="Exit", command=property_window.destroy).grid(
+            row=3, column=0, padx=10, pady=10, sticky=W)
+
     def payment(self):
         payment_window = Toplevel(self.parent)
         payment_window.title("Payment")
         payment_window.geometry("400x300")
 
-        ttk.Button(payment_window, text="Add Card", command=lambda: add_card(payment_window, self.current_user)).grid(row=0, column=0, padx=10, pady=10, sticky=W)
-        ttk.Button(payment_window, text="Delete Card", command=lambda: delete_card(payment_window, self.current_user)).grid(row=1, column=0, padx=10, pady=10, sticky=W)
-        ttk.Button(payment_window, text="Exit", command=payment_window.destroy).grid(row=2, column=0, padx=10, pady=10, sticky=W)
+        ttk.Button(payment_window, text="Add Card", command=lambda: add_card(
+            payment_window, self.current_user)).grid(row=0, column=0, padx=10, pady=10, sticky=W)
+        ttk.Button(payment_window, text="Update Card", command=lambda: update_card(
+            payment_window, self.current_user, self.prompt_card_number())).grid(row=0, column=2, padx=10, pady=10, sticky=W)
+        ttk.Button(payment_window, text="View Cards", command=lambda: view_cards(
+            payment_window, self.current_user)).grid(row=1, column=0, padx=10, pady=10, sticky=W)
+        ttk.Button(payment_window, text="Delete Card", command=lambda: delete_card(
+            payment_window, self.current_user)).grid(row=2, column=0, padx=10, pady=10, sticky=W)
+        ttk.Button(payment_window, text="Exit", command=payment_window.destroy).grid(
+            row=3, column=0, padx=10, pady=10, sticky=W)
+
 
 if __name__ == "__main__":
     rea = App(Tk())

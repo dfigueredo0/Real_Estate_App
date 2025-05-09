@@ -1,7 +1,7 @@
 import psycopg2
 import logging
 import os
-from psycopg2 import DatabaseError 
+from psycopg2 import DatabaseError
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -11,6 +11,7 @@ USER_NAME = os.environ.get("USER_NAME")
 PASSWORD = os.environ.get("PASSWORD")
 HOST = os.environ.get("HOST")
 PORT = os.environ.get("PORT", "5432")
+
 
 def get_connection():
     try:
