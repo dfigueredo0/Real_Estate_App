@@ -15,13 +15,15 @@ PORT = os.environ.get("PORT", "5432")
 def get_connection():
     try:
         logging.info("Connecting to the database...")
-        return psycopg2.connect(
+        conn = psycopg2.connect(
             dbname=DB_NAME,
             user=USER_NAME,
             password=PASSWORD,
             host=HOST,
             port=PORT
         )
+        logging.info("Database connection established.")
+        return conn
     except DatabaseError as e:
         logging.error(f"Database connection error: {e}")
         raise e
