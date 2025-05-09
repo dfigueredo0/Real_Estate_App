@@ -242,7 +242,6 @@ def update_property(parent, property_id):
 
     update_prop_win.protocol("WM_DELETE_WINDOW", on_close)
 
-# TODO: delete_property
 def delete_property(property_id):
     if not property_id:
             messagebox.showerror("Missing Input", "Property ID cannot be empty.")
