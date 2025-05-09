@@ -1,4 +1,4 @@
-from db import get_connection
+from connection import get_connection
 from psycopg2 import sql, DatabaseError
 
 def add_card(email):
@@ -12,7 +12,7 @@ def add_card(email):
         cvv = input("Enter the CVV: ")
         billing_address = input("Enter the billing address: ")
         
-        cursor.execute("INSERT INTO CreditCard VALUES (%d, %s, %s, %s, %d, %s, %s)", (card_num, cardholder_name, exp_date, cvv, billing_address, email))
+        cursor.execute("INSERT INTO CreditCard (cardnum, cardholdername, expdate, cvv, billingaddress, email) VALUES (%d, %s, %s, %s, %d, %s, %s)", (card_num, cardholder_name, exp_date, cvv, billing_address, email))
 
         cursor.commit()
         print("Card added successfully.")
