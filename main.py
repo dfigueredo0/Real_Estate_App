@@ -1,8 +1,10 @@
 from tkinter import *
 from tkinter import ttk, messagebox
 from tkinter.simpledialog import askstring
+
 from auth import *
 from property import *
+from payment import *
 
 class App(ttk.Frame):
     def __init__(self, parent):
@@ -70,6 +72,10 @@ class App(ttk.Frame):
             }
 
             self.property()
+            
+            if role == "renter":
+                self.payment()
+
             print("finished 😫")
         else:
             messagebox.showinfo(result)
@@ -175,6 +181,15 @@ class App(ttk.Frame):
         
         ttk.Button(property_window, text="Search Property", command=lambda: search_property(self.parent, self.current_user)).grid(row=0, column=1, padx=10, pady=10, sticky=W)
         ttk.Button(property_window, text="Exit", command=property_window.destroy).grid(row=3, column=0, padx=10, pady=10, sticky=W)
+    
+    def payment(self):
+        payment_window = Toplevel(self.parent)
+        payment_window.title("Payment")
+        payment_window.geometry("400x300")
+
+        ttk.Button(payment_window, text="Add Card", command=lambda: add_card(payment_window, self.current_user)).grid(row=0, column=0, padx=10, pady=10, sticky=W)
+        ttk.Button(payment_window, text="Delete Card", command=lambda: delete_card(payment_window, self.current_user)).grid(row=1, column=0, padx=10, pady=10, sticky=W)
+        ttk.Button(payment_window, text="Exit", command=payment_window.destroy).grid(row=2, column=0, padx=10, pady=10, sticky=W)
 
 if __name__ == "__main__":
     rea = App(Tk())
