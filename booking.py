@@ -1,7 +1,7 @@
 from connection import get_connection
 from psycopg2 import sql, DatabaseError
 
-def book_property(pid, renter_email, card_num):
+def book_property(pid, renter_email, card_num, cardholder_name):
     conn = get_connection()
     cursor = conn.cursor()
     
@@ -15,10 +15,14 @@ def book_property(pid, renter_email, card_num):
         if cursor.fetchone():
             return "You have already booked this property."
 
+        cursor.execute("SELECT * FROM CreditCard WHERE cardnum = %s AND email = %s", (card_num, renter_email))
+        if not cursor.fetchone():
+            return "Card not found. Please add a payment method first."
+
         cursor.execute("""
-            INSERT INTO booking (propertyid, renteremail, cardnum)
-            VALUES (%s, %s, %s)
-                      """, (pid, renter_email, card_num))
+            INSERT INTO booking (propertyid, renteremail, cardnum, cardholdername)
+            VALUES (%s, %s, %s, %s)
+                      """, (pid, renter_email, card_num, cardholder_name))
         
         cursor.execute("UPDATE property SET availability = FALSE WHERE propertyid = %s", (pid,))
 
@@ -85,11 +89,12 @@ def cancel_booking(booking_id, email):
 
     try:
         cursor.execute("""
-            SELECT propertyid FROM booking WHERE renteremail = %s
+            SELECT propertyid FROM booking WHERE booking_id = %s AND renteremail = %s
                        """, (email,))
         booking = cursor.fetchone()
         if not booking:
             return "No booking found to cancel."
+        
         property_id = booking[0]
         cursor.execute("DELETE FROM booking WHERE booking_id = %s AND renteremail = %s", (booking_id, email))
         cursor.execute("UPDATE property SET availability = TRUE WHERE propertyid = %s", (property_id,))
