@@ -5,6 +5,7 @@ from tkinter.simpledialog import askstring
 from auth import *
 from property import *
 from payment import *
+from booking import *
 
 
 class App(ttk.Frame):
@@ -83,6 +84,7 @@ class App(ttk.Frame):
 
             if role == "renter":
                 self.payment()
+                self.booking()
 
             print("finished 😫")
         else:
@@ -183,10 +185,16 @@ class App(ttk.Frame):
             return None
         return card_number
 
+    def prompt_booking_id(self):
+        booking_id = askstring("Booking ID", "Enter the Booking ID:")
+        if booking_id is None:
+            return None
+        return booking_id
+
     def property(self):
         property_window = Toplevel(self.parent)
         property_window.title("Property")
-        property_window.geometry("800x600")
+        property_window.geometry("400x300")
 
         is_agent = self.current_user.get("role") == "agent"
 
@@ -197,9 +205,12 @@ class App(ttk.Frame):
                 self.parent, self.prompt_pid())).grid(row=1, column=0, padx=10, pady=10, sticky=W)
             ttk.Button(property_window, text="Delete Property", command=lambda: delete_property(
                 self.prompt_pid())).grid(row=2, column=0, padx=10, pady=10, sticky=W)
+            ttk.Button(property_window, text="Search Property", command=lambda: search_property(
+                self.parent, self.current_user)).grid(row=0, column=1, padx=10, pady=10, sticky=W)
+        else:
+            ttk.Button(property_window, text="Search Property", command=lambda: search_property(
+                self.parent, self.current_user)).grid(row=0, column=0, padx=10, pady=10, sticky=W)
 
-        ttk.Button(property_window, text="Search Property", command=lambda: search_property(
-            self.parent, self.current_user)).grid(row=0, column=1, padx=10, pady=10, sticky=W)
         ttk.Button(property_window, text="Exit", command=property_window.destroy).grid(
             row=3, column=0, padx=10, pady=10, sticky=W)
 
@@ -217,6 +228,22 @@ class App(ttk.Frame):
         ttk.Button(payment_window, text="Delete Card", command=lambda: delete_card(
             payment_window, self.current_user)).grid(row=2, column=0, padx=10, pady=10, sticky=W)
         ttk.Button(payment_window, text="Exit", command=payment_window.destroy).grid(
+            row=3, column=0, padx=10, pady=10, sticky=W)
+
+    def booking(self):
+        booking_window = Toplevel(self.parent)
+        booking_window.title("Booking")
+        booking_window.geometry("400x300")
+
+        ttk.Button(booking_window, text="Add Booking", command=lambda: book_property(
+            booking_window, self.current_user)).grid(row=0, column=0, padx=10, pady=10, sticky=W)
+        ttk.Button(booking_window, text="View My Bookings",
+                   command=lambda: view_user_bookings(booking_window, self.current_user)).grid(row=1, column=0, padx=10, pady=10, sticky=W)
+        ttk.Button(booking_window, text="View Available Bookings", command=lambda: view_available_bookings(
+            booking_window)).grid(row=1, column=2, padx=10, pady=10, sticky=W)
+        ttk.Button(booking_window, text="Cancel Booking", command=lambda: cancel_booking(
+            self.current_user, self.prompt_booking_id())).grid(row=2, column=0, padx=10, pady=10, sticky=W)
+        ttk.Button(booking_window, text="Exit", command=booking_window.destroy).grid(
             row=3, column=0, padx=10, pady=10, sticky=W)
 
 
