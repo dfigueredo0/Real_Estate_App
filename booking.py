@@ -148,7 +148,7 @@ def cancel_booking(current_user, booking_id):
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "SELECT bookingid FROM booking WHERE bookingid = %s AND renteremail = %s", (booking_id, email))
+            "SELECT propertyid FROM booking WHERE bookingid = %s AND renteremail = %s", (booking_id, email))
         result = cursor.fetchone()
         if not result:
             messagebox.showerror("Error", "No booking found to cancel.")
@@ -157,7 +157,7 @@ def cancel_booking(current_user, booking_id):
         cursor.execute(
             "DELETE FROM booking WHERE bookingid = %s AND renteremail = %s", (booking_id, email))
         cursor.execute(
-            "UPDATE property SET availability = TRUE WHERE propertyid = %s", (pid,))
+            "UPDATE Property SET availability = TRUE WHERE propertyid = %s", (pid,))
         conn.commit()
         messagebox.showinfo("Success", "Booking cancelled successfully.")
     except DatabaseError as e:
