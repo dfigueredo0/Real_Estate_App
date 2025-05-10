@@ -3,6 +3,7 @@ import re
 import bcrypt
 from psycopg2 import sql, DatabaseError
 from connection import get_connection
+from tkinter import simpledialog, messagebox
 
 
 def hash_password(password):
@@ -33,20 +34,20 @@ def register_user(email, first_name, last_name, password, role, extra_info=None)
             return "User already exists."
 
         hashed_pw = hash_password(password)
-        cursor.execute("INSERT INTO users (Email, FirstName, LastName, HashPassword) VALUES (%s, %s, %s, %s)",
-                       (email, first_name, last_name, hashed_pw))
+        cursor.execute("INSERT INTO users (Email, FirstName, LastName, HashPassword, RoleType) VALUES (%s, %s, %s, %s, %s)",
+                       (email, first_name, last_name, hashed_pw, role.capitalize()))
 
-        if role == "admin":
+        if role.lower() == "agent":
             job_title = extra_info.get("job_title")
             agency = extra_info.get("agency")
             phone_number = extra_info.get("phone_number")
-            cursor.execute("INSERT INTO agent VALUES (%s, %s, %s, %s)",
+            cursor.execute("INSERT INTO agent (Email, JobTitle, Agency, Phone) VALUES (%s, %s, %s, %s)",
                            (email, job_title, agency, phone_number))
-
-        budget = extra_info.get("budget")
-        loc = extra_info.get("location")
-        cursor.execute("INSERT INTO renter (Email, Budget, PreferredLocation) VALUES (%s, %s, %s)",
-                       (email, budget or None, loc or None))
+        else:
+            budget = extra_info.get("budget")
+            loc = extra_info.get("location")
+            cursor.execute("INSERT INTO renter (Email, Budget, PreferredLocation) VALUES (%s, %s, %s)",
+                           (email, budget or None, loc or None))
 
         conn.commit()
         return "User registered successfully."
@@ -122,15 +123,39 @@ def get_user_role(email):
     cursor = conn.cursor()
 
     try:
-        cursor.execute("SELECT roletype FROM users WHERE Email = %s", (email,))
+        cursor.execute("SELECT RoleType FROM users WHERE Email = %s", (email,))
         result = cursor.fetchone()
-        if result[0]:
-            return "agent"
-        else:
-            return "renter"
+        return result[0].lower() if result else None
     except DatabaseError as e:
         conn.rollback()
         return f"Database error: {e}"
+    finally:
+        if cursor:
+            cursor.close()
+        if conn:
+            conn.close()
+
+
+def reset_password(email):
+    new_password = simpledialog.askstring(
+        "Reset Password", f"Enter new password for {email}:", show='*')
+    if not new_password or len(new_password) < 8:
+        messagebox.showerror(
+            "Error", "Password must be at least 8 characters long.")
+        return
+
+    conn = get_connection()
+    cursor = conn.cursor()
+
+    try:
+        hashed_pw = hash_password(new_password)
+        cursor.execute(
+            "UPDATE users SET HashPassword = %s WHERE Email = %s", (hashed_pw, email))
+        conn.commit()
+        messagebox.showinfo("Success", "Password reset successfully.")
+    except DatabaseError as e:
+        conn.rollback()
+        messagebox.showerror("Database Error", str(e))
     finally:
         if cursor:
             cursor.close()
