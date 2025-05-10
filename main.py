@@ -117,7 +117,7 @@ class App(ttk.Frame):
         ttk.Button(booking_window, text="View Available Bookings", command=lambda: view_available_bookings(
             booking_window)).grid(row=1, column=1, padx=10, pady=10, sticky=W)
         ttk.Button(booking_window, text="Cancel Booking", command=lambda: cancel_booking(
-            booking_window, self.current_user)).grid(row=2, column=0, padx=10, pady=10, sticky=W)
+            self.current_user, self.prompt_booking_id())).grid(row=2, column=0, padx=10, pady=10, sticky=W)
         ttk.Button(booking_window, text="Exit", command=booking_window.destroy).grid(
             row=3, column=0, padx=10, pady=10, sticky=W)
 

@@ -106,7 +106,7 @@ def view_user_bookings(parent, current_user):
 
     try:
         cursor.execute("""
-            SELECT p.propertyid, p.propertyname, p.location, b.startdate, b.enddate, b.totalcost
+            SELECT p.propertyid, p.location, b.startdate, b.enddate, b.totalcost
             FROM property p JOIN booking b ON p.propertyid = b.propertyid
             WHERE b.renteremail = %s
         """, (email,))
@@ -137,7 +137,7 @@ def view_available_bookings(parent):
     cursor = conn.cursor()
     try:
         cursor.execute("""
-            SELECT p.propertyid, p.propertyname, p.location, p.rentalprice, p.description
+            SELECT p.propertyid, p.location, p.rentalprice, p.description
             FROM property p
             WHERE p.availability = TRUE
         """)
@@ -149,8 +149,8 @@ def view_available_bookings(parent):
             return
 
         tree = ttk.Treeview(window, columns=(
-            "ID", "Name", "Location", "Price", "Description"), show="headings")
-        for col in ("ID", "Name", "Location", "Price", "Description"):
+            "ID", "Location", "Price", "Description"), show="headings")
+        for col in ("ID", "Location", "Price", "Description"):
             tree.heading(col, text=col)
         for a in available:
             tree.insert("", END, values=a)
@@ -203,16 +203,27 @@ def cancel_booking(current_user, booking_id):
     cursor = conn.cursor()
     try:
         cursor.execute(
-            "SELECT propertyid FROM booking WHERE booking_id = %s AND renteremail = %s", (booking_id, email))
+            "SELECT propertyid FROM booking WHERE bookingid = %s AND renteremail = %s",
+            (booking_id, email)
+        )
         result = cursor.fetchone()
         if not result:
             messagebox.showerror("Error", "No booking found to cancel.")
             return
-        pid = result[0]
+        property_id = result[0]
+
+        # Step 2: Delete the booking
         cursor.execute(
-            "DELETE FROM booking WHERE booking_id = %s AND renteremail = %s", (booking_id, email))
+            "DELETE FROM booking WHERE bookingid = %s AND renteremail = %s",
+            (booking_id, email)
+        )
+
+        # Step 3: Update availability of the property
         cursor.execute(
-            "UPDATE property SET availability = TRUE WHERE propertyid = %s", (pid,))
+            "UPDATE property SET availability = TRUE WHERE propertyid = %s",
+            (property_id,)
+        )
+
         conn.commit()
         messagebox.showinfo("Success", "Booking cancelled successfully.")
     except DatabaseError as e:
