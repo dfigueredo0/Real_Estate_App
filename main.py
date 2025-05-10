@@ -123,7 +123,7 @@ class App(ttk.Frame):
 
         renter_fields = {
             "Budget": DoubleVar(),
-            "Pregerred Location": StringVar()
+            "Preferred Location": StringVar()
         }
 
         is_agent = BooleanVar()

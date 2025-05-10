@@ -42,11 +42,11 @@ def register_user(email, first_name, last_name, password, role, extra_info=None)
             phone_number = extra_info.get("phone_number")
             cursor.execute("INSERT INTO agent VALUES (%s, %s, %s, %s)",
                            (email, job_title, agency, phone_number))
-        elif role == "user":
-            budget = extra_info.get("budget")
-            loc = extra_info.get("location")
-            cursor.execute("INSERT INTO renter (Email, Budget, PreferredLocation) VALUES (%s, %s, %s)",
-                           (email, budget or None, loc or None))
+
+        budget = extra_info.get("budget")
+        loc = extra_info.get("location")
+        cursor.execute("INSERT INTO renter (Email, Budget, PreferredLocation) VALUES (%s, %s, %s)",
+                       (email, budget or None, loc or None))
 
         conn.commit()
         return "User registered successfully."
